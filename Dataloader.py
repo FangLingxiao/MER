@@ -1,15 +1,11 @@
 import multiprocessing as mp
 import torch
-import librosa
 import pandas as pd
 from torch.utils.data import Dataset, DataLoader, random_split
-from torchvision import torch 
+import torch 
 import torchaudio
 import torch.nn.functional as F
 import pandas as pd
-from tqdm import tqdm
-from tqdm.notebook import tqdm, trange
-from tqdm.auto import tqdm
 import multiprocessing as mp 
 from torch.nn import Sequential
 
@@ -43,10 +39,10 @@ def wavs_to_spectrogram(filepath):
 # defining global path variables
 MODEL_DIR = "./saved_models"
 DATASET_PREFIX = "./data"
-DATA_PATH = f"{DATASET_PREFIX}/genres_original/gztan_dataset.csv"
+DATA_PATH = f"{DATASET_PREFIX}/MERdata.csv"
 
 
-class Dataset(Dataset):
+class MERDataset(Dataset):
     def __init__(self, filepath): 
         super().__init__()
         self.dataframe = pd.read_csv(filepath)  # Load data from CSV filepath defined earlier into a Pandas dataframe
@@ -59,7 +55,6 @@ class Dataset(Dataset):
 
 # The collate function
 def custom_collate_fn(batch, frm=1000):
-    #image_batch_tensor = torch.FloatTensor(len(batch), 128, 1500)
     image_tensors = []
     labels = []
 
