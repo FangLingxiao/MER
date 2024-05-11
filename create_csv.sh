@@ -1,5 +1,5 @@
 root_dir="$1"
-csv_file="$root_dir/mnist_dataset.csv"
+csv_file="$root_dir/MERdata.csv"
 re='^[0-9]+$'
 
 echo "mapping files in directory: $root_dir"

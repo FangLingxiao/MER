@@ -4,9 +4,35 @@ import numpy as np
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
-import sounddevice as sd
+import librosa
 
-from .const import *
+from const import *
+
+
+def rename_mp3_files(folder_path, idx):
+    
+    """Rename MP3 files in the given folder path with sequential numbers starting from 200.
+
+    Args:
+        folder_path (str): The path to the folder containing MP3 files.
+    """
+        
+    mp3_files = [file for file in os.listdir(folder_path) if file.endswith('.mp3')]
+
+    def sort_by_number(filename):
+        return int(''.join(filter(str.isdigit, filename)))
+
+    mp3_files.sort(key=sort_by_number)
+
+    for i, file in enumerate(mp3_files):
+        new_name = f"{i+idx}.mp3"
+        old_path = os.path.join(folder_path, file)
+        new_path = os.path.join(folder_path, new_name)
+        os.rename(old_path, new_path)
+        print(f"rename {file} as {new_name}")
+
+    print("rename successfully!")
+
 
 def get_spectrogram(waveform, input_len=22050):
   """ 
@@ -19,6 +45,16 @@ def get_spectrogram(waveform, input_len=22050):
   Returns:
       Tensor: Spectrogram of the 1D waveform. Shape (freq, time, 1)
   """
+  #target_samples = int(target_length * input_length)
+    
+  # Zero padding if the audio length is less than the target length
+  #if len(waveform) < target_samples:
+  #    pad_length = target_samples - len(waveform)
+  #    waveform = np.pad(waveform, (0, pad_length), mode='constant')
+
+  # Truncate it if the audio length is longer than the target length
+  #elif len(waveform) > target_samples:
+  #    waveform = waveform[:target_samples]
   max_zero_padding = min(input_len, tf.shape(waveform))
   # Zero-padding for an audio waveform with less than 44,100 samples.
   waveform = waveform[:input_len]
@@ -32,7 +68,7 @@ def get_spectrogram(waveform, input_len=22050):
   equal_length = tf.concat([waveform, zero_padding], 0)
   # Convert the waveform to a spectrogram via a STFT.
   spectrogram = tf.signal.stft(
-      equal_length, frame_length=255, frame_step=128)
+      equal_length, frame_length=255, frame_step=128, n_fft = 2048)
   # Obtain the magnitude of the STFT.
   spectrogram = tf.abs(spectrogram)
   # Add a `channels` dimension, so that the spectrogram can be used
@@ -96,7 +132,10 @@ def plot_and_play(test_audio, second_id = 1.0, second_length = 1, channel = 0):
   plt.show()
 
   # Play sound
-  sd.play(test_audio[from_id: to_id, channel], blocking=True)
+  # sd.play(test_audio[from_id: to_id, channel], blocking=True)
+  # Play sound using librosa
+  librosa.output.write_wav('temp_audio.wav', test_audio[from_id: to_id, channel].numpy(), DEFAULT_FREQ)
+  os.system('aplay temp_audio.wav')  # Linux
 
 def preprocess_waveforms(waveforms, input_len):
   """ Get the first input_len value of the waveforms, if not exist, pad it with 0.
