@@ -15,8 +15,8 @@ lr_scheduler, acc_fn, writer, DEVICE):
         y_pred = model(X)
         
         loss = loss_fn(y_pred,y)
-        train_loss += loss
-        train_acc += acc_fn(y_pred, y) 
+        train_loss += loss.item()
+        train_acc += acc_fn(y_pred, y).item()
         
         optimizer.zero_grad()
         loss.backward()
@@ -33,6 +33,8 @@ lr_scheduler, acc_fn, writer, DEVICE):
 
     if(lr_scheduler.get_last_lr()[0]>=0.00001):
         lr_scheduler.step()
+
+    return train_acc, train_loss
 
 def val_step(epoch, model, data_loader, loss_fn, 
 early_stopper, acc_fn, writer, DEVICE):
@@ -52,8 +54,8 @@ early_stopper, acc_fn, writer, DEVICE):
             val_pred = model(X)
             #print(val_pred.shape)
 
-            val_loss += loss_fn(val_pred, y)
-            val_acc += acc_fn(val_pred, y)
+            val_loss += loss_fn(val_pred, y).item()
+            val_acc += acc_fn(val_pred, y).item()
       
         val_loss /= len(data_loader)
         val_acc /= len(data_loader)
@@ -61,14 +63,15 @@ early_stopper, acc_fn, writer, DEVICE):
        
         print(f"Validation loss: {val_loss:.5f} | Validation acc: {val_acc:.2f}\n")
 
-        writer.add_scalar(f"Loss/val", val_loss,epoch)
-        writer.add_scalar(f"Acc/val", val_acc,epoch)
+        writer.add_scalar(f"Loss/val", val_loss, epoch)
+        writer.add_scalar(f"Acc/val", val_acc, epoch)
 
-        
+        early_stop = False
         if early_stopper.should_stop(val_acc):
             print(f"\nValidation accuracy has not improved for {early_stopper.epoch_counter} epoch, aborting...")
-            return 0
+            early_stop = True
         else:
             if early_stopper.epoch_counter > 0:
                 print (f"Epochs without improvement: {early_stopper.epoch_counter}\n")
-            return 1
+        
+        return val_acc, val_loss, early_stop

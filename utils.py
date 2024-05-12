@@ -1,5 +1,5 @@
 import os
-
+from pydub import AudioSegment
 
 
 def rename_mp3_files(folder_path, idx):
@@ -26,6 +26,28 @@ def rename_mp3_files(folder_path, idx):
 
     print("rename successfully!")
 
+
+def convert_mp3_to_wav(folder_path):
+    """Convert all MP3 files in the given folder path to WAV format.
+
+    Args:
+        folder_path (str): The path to the folder containing MP3 files.
+    """
+    mp3_files = [file for file in os.listdir(folder_path) if file.endswith('.mp3')]
+
+    for mp3_file in mp3_files:
+        mp3_path = os.path.join(folder_path, mp3_file)
+        wav_file = os.path.splitext(mp3_file)[0] + '.wav'
+        wav_path = os.path.join(folder_path, wav_file)
+        # Load MP3 file
+        audio = AudioSegment.from_mp3(mp3_path)
+        # Export as WAV
+        audio.export(wav_path, format="wav")
+        print(f"Converted {mp3_file} to {wav_file}")
+
+    print("Conversion completed successfully!")
+
+    
 def calculate_thresholds(data, column, n_levels=3):
     min_value = data[column].min()
     max_value = data[column].max()

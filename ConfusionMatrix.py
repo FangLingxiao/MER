@@ -38,5 +38,5 @@ def ConfusionMatrix(model, dataloader, DEVICE):
     plt.ylabel('True label')
     plt.xlabel('Predicted lable')
 
-    plt.xticks(range(0,9), labels=['happy', 'excited', 'angry', 'content', 'neutral', 'distressed', 'calm', 'bored', 'sad'])
-    plt.yticks(range(0,9), labels=['happy', 'excited', 'angry', 'content', 'neutral', 'distressed', 'calm', 'bored', 'sad' ])
+    plt.xticks(range(0,9), labels=['happy','tense','angry','content','neutral','distressed','relex','peaceful','sad'])
+    plt.yticks(range(0,9), labels=['happy','tense','angry','content','neutral','distressed','relex','peaceful','sad'])
