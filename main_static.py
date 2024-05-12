@@ -1,3 +1,4 @@
+
 """
   file: main_static.py
   author: Alex Nguyen
@@ -12,8 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 import tensorflow as tf
-#import librosa
-#import librosa.display
+import pickle
 #import sounddevice as sd
 import pandas as pd
 import tensorflow.keras.layers as L
@@ -45,7 +45,6 @@ from CRNN import Simple_CRNN_3, SimpleDenseModel, \
 # np.random.seed(seed)
 
 #sd.default.samplerate = DEFAULT_FREQ
-#y, sr = librosa.load('audio.wav', sr=DEFAULT_FREQ)
 
 ANNOTATION_SONG_LEVEL = "data/normalizedMERdataset.csv"
 AUDIO_FOLDER = "data/wav"
@@ -118,7 +117,7 @@ def train_datagen_song_level():
     # Loop through each channel
     for i in range(waveforms.shape[-1]):
       # Shape (timestep, frequency, 1)
-      spectrogram = get_spectrogram(waveforms[..., i])
+      spectrogram = get_spectrogram(waveforms[..., i], input_len=waveforms.shape[0])
       # spectrogram = tf.convert_to_tensor(np.log(spectrogram.numpy() + np.finfo(float).eps))
       if spectrograms == None:
         spectrograms = spectrogram
@@ -255,8 +254,12 @@ def train(model,
   
   if history_path != None and os.path.exists(history_path):
     # Sometimes, we have not created the files
-    with open(history_path, "rb") as f:
-      history = np.load(f, allow_pickle=True)
+    with open(history_path + "_train.pkl", "rb") as f:
+        epochs_loss = pickle.load(f)
+
+    # 加载epochs_val_loss列表
+    with open(history_path + "_val.pkl", "rb") as f:
+        epochs_val_loss = pickle.load(f)
     epochs_loss, epochs_val_loss = history
     epochs_loss = epochs_loss.tolist()
     epochs_val_loss = epochs_val_loss.tolist()
@@ -282,31 +285,45 @@ def train(model,
         batch_label = batch[1]
         loss = train_step(batch_x, batch_label, model, loss_function, optimizer, step=step_pointer + 1)
         print(f"Epoch {epoch + 1} - Step {step_pointer + 1} - Loss: {loss}")
-        losses.append(loss)
+        losses.append(loss.numpy()) # transform loss to NumPy array
 
         if (step_pointer + 1) % valid_step == 0:
           print(
               "Training loss (for one batch) at step %d: %.4f"
               % (step_pointer + 1, float(loss))
           )
+        
           # perform validation
           val_batch = next(test_batch_iter)
           logits = model(val_batch[0], training=False)
           val_loss = loss_function(val_batch[1], logits)
           print(f"exmaple logits: {logits}")
           print(f"Validation loss: {val_loss}\n-----------------")
+
+        epoch_loss = np.mean(losses)  # calculate epoch loss mean
+        epochs_loss.append(epoch_loss)
+
         if (step_pointer + 1) == steps_per_epoch:
           val_batch = next(test_batch_iter)
           logits = model(val_batch[0], training=False)
           val_loss = loss_function(val_batch[1], logits)
-          epochs_val_loss.append(val_loss)
+          epochs_val_loss.append(val_loss.numpy())
 
         step_pointer += 1
     epochs_loss.append(losses)
 
     # Save history and model
     if history_path != None and save_history:
-      np.save(history_path, [epochs_loss, epochs_val_loss])
+      #np.save(history_path, [epochs_loss, epochs_val_loss])
+      #np.save(history_path + "_train.npy", epochs_loss)
+      #np.save(history_path + "_val.npy", epochs_val_loss)
+      # save epochs_loss as list
+      with open(history_path + "_train.pkl", "wb") as f:
+        pickle.dump(epochs_loss, f)
+    
+      # save epochs_val_loss as list
+      with open(history_path + "_val.pkl", "wb") as f:
+        pickle.dump(epochs_val_loss, f)
     
     if weights_path != None:
       model.save_weights(weights_path)
@@ -314,14 +331,15 @@ def train(model,
   # return history
   return [epochs_loss, epochs_val_loss]
 
+
 # %%
 
 """################## Training #################"""
 
 ## Define model first
 
-weights_path = "./weights/cbam_2/checkpoint"
-history_path = "./history/cbam_2.npy"
+weights_path = "weights/checkpoint_2.weights.h5"
+history_path = "history/cbam_2_2.npy"
 
 # model = SimpleDenseModel(SPECTROGRAM_TIME_LENGTH, FREQUENCY_LENGTH, N_CHANNEL, BATCH_SIZE)
 # model.build(input_shape=(BATCH_SIZE, SPECTROGRAM_TIME_LENGTH, FREQUENCY_LENGTH, N_CHANNEL))
@@ -588,8 +606,8 @@ def cbam_1():
   tensor = L.Permute((2, 1, 3))(tensor)
   tensor = L.Reshape((32, 4 * 256))(tensor)
 
-  # tensor = L.GRU(256, activation="tanh", return_sequences=True)(tensor)
-  # tensor = L.GRU(128, activation="tanh", return_sequences=True)(tensor)
+  tensor = L.GRU(256, activation="tanh", return_sequences=True)(tensor)
+  tensor = L.GRU(128, activation="tanh", return_sequences=True)(tensor)
   tensor = L.GRU(64, activation="tanh")(tensor)
   tensor = L.Dense(512, activation="relu")(tensor)
   tensor = L.Dense(256, activation="relu")(tensor)
@@ -660,8 +678,8 @@ def cbam_2():
   tensor = L.Permute((2, 1, 3))(tensor)
   tensor = L.Reshape((32, 4 * 256))(tensor)
 
-  # tensor = L.GRU(256, activation="tanh", return_sequences=True)(tensor)
-  # tensor = L.GRU(128, activation="tanh", return_sequences=True)(tensor)
+  tensor = L.GRU(256, activation="tanh", return_sequences=True)(tensor)
+  tensor = L.GRU(128, activation="tanh", return_sequences=True)(tensor)
   tensor = L.LSTM(256, activation="tanh")(tensor)
   tensor = L.Dense(512, activation="relu")(tensor)
   tensor = L.Dense(256, activation="relu")(tensor)
@@ -717,8 +735,14 @@ sample_output.shape
 # %%
 
 # Plot
-with open(history_path, "rb") as f:
-  [epochs_loss, epochs_val_loss] = np.load(f, allow_pickle=True)
+#with open(history_path, "rb") as f:
+#  [epochs_loss, epochs_val_loss] = np.load(f, allow_pickle=True)
+with open(history_path + "_train.pkl", "rb") as f:
+    epochs_loss = pickle.load(f)
+
+# 加载epochs_val_loss列表
+with open(history_path + "_val.pkl", "rb") as f:
+    epochs_val_loss = pickle.load(f)
 
 
 e_loss = [k[0] for k in epochs_loss]
@@ -943,4 +967,3 @@ w
 y_pred_list[-1]
 
 # %%
-

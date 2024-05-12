@@ -92,7 +92,7 @@ def get_resnet():
     
 
 if __name__ == '__main__':
-    tensor = torch.rand([1, 1, 128, 1000])
+    tensor = torch.rand([32, 1, 64, 1200])
     model = get_resnet()                                          # Instantiate the ResNet model
 
     total_params = sum(p.numel() for p in model.parameters())     # Calculate the total number of parameters
