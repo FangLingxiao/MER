@@ -71,8 +71,9 @@ class AudioDataset(Dataset):
                 emotion_label = 8  # sad
 
             # one-hot encode
-            label = torch.zeros(9)
-            label[emotion_label] = 1
+            #label = torch.zeros(9)
+            #label[emotion_label] = 1
+            label = torch.tensor(emotion_label)
             #print(f"Label shape: {label.shape}, Label dtype: {label.dtype}")  # 添加调试信息
             l.append((padding_log_mel_spectrogram, label))
             print(f"{idx+1}/{len(df)} ({100*(idx+1)/len(df):.1f}%)", end = "\r" if idx < len(df) else "\n", flush=True)

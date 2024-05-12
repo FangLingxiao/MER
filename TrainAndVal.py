@@ -44,9 +44,13 @@ early_stopper, acc_fn, writer, DEVICE):
 
     with torch.inference_mode():
         for X, y in data_loader:
+            
+            #print(y.shape)
             X  = X.to(DEVICE)
+            
             y = y.to(DEVICE)
             val_pred = model(X)
+            #print(val_pred.shape)
 
             val_loss += loss_fn(val_pred, y)
             val_acc += acc_fn(val_pred, y)

@@ -88,7 +88,7 @@ class ResNet(nn.Module):
             
 # convenience function
 def get_resnet():
-    return ResNet(1, ResBlock, outputs=10)
+    return ResNet(1, ResBlock, outputs=9)
     
 
 if __name__ == '__main__':
