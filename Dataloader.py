@@ -66,7 +66,7 @@ class AudioDataset(Dataset):
             elif valence_level == 2 and arousal_level == 0:
                 emotion_label = 6  # relax / calm
             elif valence_level == 1 and arousal_level == 0:
-                emotion_label = 7  # bored 
+                emotion_label = 7  # peaceful 
             else:
                 emotion_label = 8  # sad
 
